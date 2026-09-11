@@ -1,3 +1,5 @@
+server:
+  port: 8081
 spring:
   application:
     name: waitless-backend
@@ -26,7 +28,7 @@ firebase:
     # When empty, Firebase verification is disabled and authenticated endpoints return 503.
     path: ${FIREBASE_CREDENTIALS_PATH:}
   mock:
-    enabled: ${FIREBASE_MOCK_ENABLED:false}
+    enabled: ${FIREBASE_MOCK_ENABLED:true}
     token: ${FIREBASE_MOCK_TOKEN:waitless-local-token}
     firebase-uid: ${FIREBASE_MOCK_UID:mock-user-001}
     email: ${FIREBASE_MOCK_EMAIL:owner@example.com}

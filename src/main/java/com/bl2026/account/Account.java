@@ -29,18 +29,28 @@ public class Account {
     @Column(name = "firebase_uid", nullable = false, unique = true, length = 128, updatable = false)
     private String firebaseUid;
 
-    @Column(name = "full_name")
+    @Column(name = "full_name", nullable = false)
     private String fullName;
 
-    @Column(name = "email", unique = true)
+    /** Dial code including the plus sign, e.g. {@code +212}. */
+    @Column(name = "phone_area", length = 8)
+    private String phoneArea;
+
+    /** National part only, without the dial code, e.g. {@code 612345678}. */
+    @Column(name = "phone_number", unique = true)
+    private String phoneNumber;
+
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public Account(String firebaseUid, String fullName, String email) {
+    public Account(String firebaseUid, String fullName, String phoneArea, String phoneNumber, String email) {
         this.firebaseUid = firebaseUid;
         this.fullName = fullName;
+        this.phoneArea = phoneArea;
+        this.phoneNumber = phoneNumber;
         this.email = email;
         this.createdAt = Instant.now();
     }

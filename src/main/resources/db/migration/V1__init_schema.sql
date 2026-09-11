@@ -15,6 +15,8 @@ CREATE TABLE account (
 
 CREATE UNIQUE INDEX ux_account_firebase_uid ON account (firebase_uid);
 CREATE UNIQUE INDEX ux_account_email ON account (email);
+-- phone_area holds the dial code ("+212"), phone_number the national part ("612345678").
+CREATE UNIQUE INDEX ux_account_phone_number ON account (phone_number);
 
 CREATE TABLE store (
     id         uuid         NOT NULL,
