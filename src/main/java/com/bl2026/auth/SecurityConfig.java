@@ -1,6 +1,7 @@
 package com.bl2026.auth;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -59,13 +60,15 @@ public class SecurityConfig {
     }
 
     /**
-     * Wide open for now: the customer web app is served from an unknown origin during
-     * development. Lock {@code allowedOriginPatterns} down before going to production.
+     * Origins come from configuration because they differ per environment: localhost while
+     * developing, the Netlify domain once deployed. Patterns rather than exact origins, so a
+     * wildcard can cover Netlify's deploy previews.
      */
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(
+            @Value("${waitless.cors.allowed-origins}") List<String> allowedOrigins) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOriginPatterns(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
 

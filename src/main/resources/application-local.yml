@@ -1,3 +1,16 @@
+# Development overrides. Activate with SPRING_PROFILES_ACTIVE=local, or
+# mvn spring-boot:run -Dspring-boot.run.profiles=local
+#
+# Everything unsafe for a public deployment lives here rather than in application.yml,
+# so forgetting to configure the real thing breaks loudly instead of quietly.
 firebase:
   mock:
     enabled: true
+
+waitless:
+  cors:
+    allowed-origins: "*"
+
+logging:
+  level:
+    com.bl2026: DEBUG

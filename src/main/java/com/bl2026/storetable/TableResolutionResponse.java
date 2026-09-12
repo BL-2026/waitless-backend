@@ -8,7 +8,7 @@ import java.util.UUID;
 /** What the customer web app gets after scanning a QR code: the table, its store, and the menu. */
 public record TableResolutionResponse(TableInfo table, StoreInfo store, List<MenuItemResponse> menu) {
 
-    public record TableInfo(UUID id, int tableNumber) {
+    public record TableInfo(UUID id, int tableNumber, String zone) {
     }
 
     public record StoreInfo(UUID id, String name) {

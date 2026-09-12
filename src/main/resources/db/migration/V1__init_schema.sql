@@ -33,6 +33,8 @@ CREATE TABLE store_table (
     id           uuid         NOT NULL,
     store_id     uuid         NOT NULL,
     table_number integer      NOT NULL,
+    -- Free-form area label ("terrace", "salon"); drives the zone filter in the staff app.
+    zone         varchar(64),
     qr_token     varchar(64)  NOT NULL,
     CONSTRAINT pk_store_table PRIMARY KEY (id),
     CONSTRAINT fk_store_table_store FOREIGN KEY (store_id) REFERENCES store (id) ON DELETE CASCADE

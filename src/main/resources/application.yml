@@ -1,5 +1,6 @@
 server:
-  port: 8081
+  # Managed hosts pick the port and inject it; 8081 is only the local default.
+  port: ${PORT:8081}
 spring:
   application:
     name: waitless-backend
@@ -8,6 +9,11 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/waitless}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    hikari:
+      # Free Postgres plans allow few connections, and one that scales to zero drops
+      # idle ones anyway. Keep the pool small and let it shrink back to nothing.
+      maximum-pool-size: ${DB_POOL_MAX:5}
+      minimum-idle: 0
 
   jpa:
     hibernate:
@@ -22,13 +28,24 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+waitless:
+  cors:
+    # Comma-separated origins allowed to call the API, e.g. https://waitless.netlify.app.
+    # Only the customer web app needs this; the mobile app isn't subject to CORS.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,https://melodic-gecko-ef84bd.netlify.app}
+
 firebase:
   credentials:
-    # Absolute or classpath: path to the Firebase service account JSON.
-    # When empty, Firebase verification is disabled and authenticated endpoints return 503.
+    # Absolute or classpath: path to the Firebase service account JSON. Convenient
+    # locally, but managed hosts have no filesystem to put a key on — use json below.
     path: ${FIREBASE_CREDENTIALS_PATH:}
+    # The service account JSON itself, raw or base64-encoded. Wins over path.
+    json: ${FIREBASE_CREDENTIALS_JSON:}
   mock:
-    enabled: ${FIREBASE_MOCK_ENABLED:true}
+    # Off by default so a deployment that forgets this variable fails closed rather than
+    # accepting a hardcoded bearer token as the owner. The `local` profile turns it on:
+    # run development with SPRING_PROFILES_ACTIVE=local.
+    enabled: ${FIREBASE_MOCK_ENABLED:false}
     token: ${FIREBASE_MOCK_TOKEN:waitless-local-token}
     firebase-uid: ${FIREBASE_MOCK_UID:mock-user-001}
     email: ${FIREBASE_MOCK_EMAIL:owner@example.com}
@@ -36,4 +53,4 @@ firebase:
 
 logging:
   level:
-    com.bl2026: DEBUG
+    com.bl2026: ${LOG_LEVEL:INFO}

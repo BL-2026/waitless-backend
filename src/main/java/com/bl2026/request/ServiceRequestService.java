@@ -33,6 +33,7 @@ public class ServiceRequestService {
 
         StoreTable table = storeTableService.requireByQrToken(request.qrToken());
         Store store = table.getStore();
+        requireTokenMatchesClaim(request, table, store);
 
         ServiceRequest serviceRequest = serviceRequestRepository.save(
                 new ServiceRequest(store, table, request.type(), request.paymentMethod()));
@@ -85,6 +86,18 @@ public class ServiceRequestService {
                 .orElseThrow(() -> new NotFoundException("Service request " + requestId + " not found"));
         storeService.requireOwnedStore(serviceRequest.getStore().getId());
         return serviceRequest;
+    }
+
+    /**
+     * The store and table are taken from the QR token, never from the body — the body's
+     * copies only have to agree with it. A mismatch means the caller is trying to act on
+     * a table its QR code does not cover, which across tenants would let one venue's
+     * customers spam another's floor.
+     */
+    private void requireTokenMatchesClaim(CreateServiceRequestRequest request, StoreTable table, Store store) {
+        if (!store.getId().equals(request.storeId()) || table.getTableNumber() != request.tableNumber()) {
+            throw new ForbiddenException("QR token does not belong to the requested store and table");
+        }
     }
 
     private void validatePaymentMethod(CreateServiceRequestRequest request) {

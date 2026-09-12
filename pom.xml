@@ -41,6 +41,13 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
+		<!-- Health endpoint for platform probes and keep-warm pings. SecurityConfig
+		     already permits /actuator/health, which 404s without this. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
 		<!-- Boot 4 moved Flyway auto-config into this starter; flyway-core alone is silent. -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

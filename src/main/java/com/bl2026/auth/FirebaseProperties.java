@@ -19,9 +19,16 @@ public class FirebaseProperties {
         /**
          * Location of the Firebase service account JSON. Accepts a plain filesystem path,
          * or any Spring resource URL such as {@code classpath:} or {@code file:}.
-         * Empty means Firebase verification is disabled.
          */
         private String path;
+
+        /**
+         * The service account JSON itself, either raw or base64-encoded. Takes precedence
+         * over {@link #path}, because managed hosts hand you environment variables rather
+         * than somewhere to put a key file. Base64 spares you having to keep the private
+         * key's newlines intact through a dashboard text box.
+         */
+        private String json;
     }
 
     @Getter

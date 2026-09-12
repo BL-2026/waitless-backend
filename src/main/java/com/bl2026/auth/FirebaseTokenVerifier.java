@@ -13,8 +13,11 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 /**
  * Wraps the Firebase Admin SDK so the rest of the app never touches it directly.
@@ -35,14 +38,21 @@ public class FirebaseTokenVerifier {
 
     @PostConstruct
     void init() {
-        String path = properties.getCredentials().getPath();
-        if (!StringUtils.hasText(path)) {
-            log.warn("firebase.credentials.path is not set - Firebase ID token verification is DISABLED. "
-                    + "Authenticated endpoints will return 503 until it is configured.");
+        FirebaseProperties.Credentials credentials = properties.getCredentials();
+        boolean inline = StringUtils.hasText(credentials.getJson());
+
+        if (!inline && !StringUtils.hasText(credentials.getPath())) {
+            log.warn("Neither firebase.credentials.json nor firebase.credentials.path is set - "
+                    + "Firebase ID token verification is DISABLED. Authenticated endpoints will "
+                    + "return 503 until one of them is configured.");
             return;
         }
 
-        try (InputStream credentialsStream = openCredentials(path)) {
+        String source = inline ? "firebase.credentials.json" : credentials.getPath();
+
+        try (InputStream credentialsStream = inline
+                ? new ByteArrayInputStream(decodeJson(credentials.getJson()))
+                : openCredentials(credentials.getPath())) {
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(credentialsStream))
                     .build();
@@ -50,10 +60,27 @@ public class FirebaseTokenVerifier {
                 FirebaseApp.initializeApp(options);
             }
             this.firebaseAuth = FirebaseAuth.getInstance();
-            log.info("Firebase Admin SDK initialized from {}", path);
+            log.info("Firebase Admin SDK initialized from {}", source);
         } catch (IOException ex) {
+            throw new IllegalStateException("Unable to initialize Firebase from " + source, ex);
+        }
+    }
+
+    /**
+     * A service account key pasted into a dashboard field is usually base64-encoded, since
+     * the private key's embedded newlines rarely survive the round trip. Accept either form
+     * so the variable can be set whichever way is convenient.
+     */
+    private byte[] decodeJson(String value) {
+        String trimmed = value.trim();
+        if (trimmed.startsWith("{")) {
+            return trimmed.getBytes(StandardCharsets.UTF_8);
+        }
+        try {
+            return Base64.getDecoder().decode(trimmed);
+        } catch (IllegalArgumentException ex) {
             throw new IllegalStateException(
-                    "Unable to initialize Firebase from firebase.credentials.path=" + path, ex);
+                    "firebase.credentials.json is neither JSON nor valid base64", ex);
         }
     }
 

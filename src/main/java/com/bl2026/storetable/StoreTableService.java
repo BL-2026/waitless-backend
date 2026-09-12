@@ -24,7 +24,8 @@ public class StoreTableService {
     @Transactional
     public StoreTable create(UUID storeId, CreateTableRequest request) {
         Store store = storeService.requireOwnedStore(storeId);
-        return storeTableRepository.save(new StoreTable(store, request.tableNumber(), qrTokenGenerator.generate()));
+        return storeTableRepository.save(
+                new StoreTable(store, request.tableNumber(), request.zone(), qrTokenGenerator.generate()));
     }
 
     @Transactional(readOnly = true)
@@ -48,7 +49,7 @@ public class StoreTableService {
                 .map(MenuItemResponse::from)
                 .toList();
         return new TableResolutionResponse(
-                new TableResolutionResponse.TableInfo(table.getId(), table.getTableNumber()),
+                new TableResolutionResponse.TableInfo(table.getId(), table.getTableNumber(), table.getZone()),
                 new TableResolutionResponse.StoreInfo(store.getId(), store.getName()),
                 menu);
     }
