@@ -111,33 +111,36 @@ reach `/ws` can subscribe to another venue's `storeId` and watch its floor. Auth
 handshake before exposing this publicly — the mobile app polls instead, so nothing depends on
 it yet.
 
-## Deploying for free
+## Deploying
 
 The app is a Docker image plus a Postgres URL, so any host that runs containers will do.
-`render.yaml` is a ready blueprint; the environment variables are the same anywhere.
+`railway.json` pins the Dockerfile builder and health check for Railway; the environment
+variables are the same anywhere.
 
-**Database.** Don't use Render's free Postgres: it is deleted 30 days after creation. Two
-options that keep your data:
+### Railway
 
-| | Storage | Catch |
-| --- | --- | --- |
-| Supabase free | 500 MB | Pauses after ~7 days of no activity |
-| Neon free | 0.5 GB | 100 compute-hours/month, sleeps after 5 min idle |
+Add a PostgreSQL service to the same project and point the app at it with reference
+variables, rather than pasting the credentials:
 
-Neon's compute cap interacts badly with this app: the staff app polls every 3 seconds, so the
-database never gets to sleep while anyone is on shift. At the free tier's 0.25 CU that is
-400 active hours a month against a 730-hour month — fine for a 12-hour service day, but it
-will suspend if you leave the app open around the clock. Supabase doesn't meter compute, so
-prefer it unless you want branching.
+```
+SPRING_DATASOURCE_URL=jdbc:postgresql://${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}
+SPRING_DATASOURCE_USERNAME=${{Postgres.PGUSER}}
+SPRING_DATASOURCE_PASSWORD=${{Postgres.PGPASSWORD}}
+```
 
-On Supabase, use the **session pooler** connection string (port 5432), not the direct one:
-direct connections are IPv6-only on new projects, and the transaction pooler on 6543 breaks
-Flyway's prepared statements. Append `?sslmode=require` to the JDBC URL.
+Railway's own `DATABASE_URL` can't be used directly: Spring needs a `jdbc:` prefix, and that
+URL embeds the username and password in the authority, which the driver won't read.
 
-**Steps.**
+Don't set `PORT` — Railway injects it, and `server.port` already reads it.
 
-1. Create the database, then run the two SQL files against it in order: the Flyway migration
-   happens automatically on first boot, so afterwards apply `seed-demo-data.sql`.
+If the app can't reach the database, that is the platform's private network being IPv6-only.
+Either set `JAVA_TOOL_OPTIONS=-Djava.net.preferIPv6Addresses=true`, or swap in the host and
+port from `DATABASE_PUBLIC_URL`, which routes over the public proxy and bills egress.
+
+### Any host
+
+1. Create the database. Flyway runs the migration on first boot, so apply
+   `seed-demo-data.sql` afterwards, not before.
 2. Base64 the Firebase service account key and set it as `FIREBASE_CREDENTIALS_JSON`:
    ```bash
    base64 -i path/to/service-account.json | tr -d '\n' | pbcopy
@@ -149,11 +152,6 @@ Flyway's prepared statements. Append `?sslmode=require` to the JDBC URL.
    Firebase user whose uid is not `mock-user-001`, so `GET /api/stores` comes back empty and
    the staff app's PIN screen has no venue to unlock. `seed-demo-data.sql` ends with the
    `UPDATE` for this; run it with your own uid.
-
-**Cold starts.** A free instance sleeps after 15 minutes idle, and a JVM waking on a shared
-core takes a while — long enough that a customer scanning a QR code gives up. Render's free
-tier allows 750 hours a month, which covers one service running continuously, so an external
-cron hitting `/actuator/health` every 10 minutes keeps it warm within budget.
 
 ## Package layout
 
