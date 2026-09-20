@@ -30,6 +30,11 @@ public class StaffController {
         return StaffResponse.from(staffService.create(storeId, request));
     }
 
+    @PostMapping("/api/stores/{storeId}/verify-pin")
+    public VerifyPinResponse verifyStorePin(@PathVariable UUID storeId, @Valid @RequestBody VerifyPinRequest request) {
+        return staffService.verifyPinForStore(storeId, request);
+    }
+
     @PostMapping("/api/staff/{staffId}/verify-pin")
     public VerifyPinResponse verifyPin(@PathVariable UUID staffId, @Valid @RequestBody VerifyPinRequest request) {
         return staffService.verifyPin(staffId, request);

@@ -49,12 +49,12 @@ INSERT INTO menu_item (id, store_id, category, name, description, price) VALUES
     ('a0e00000-0000-0000-0000-000000000007', '51000000-0000-0000-0000-000000000001', 'Kitchen',   'Lamb tagine',        'Prunes, sesame, slow-cooked in clay',        120.00),
     ('a0e00000-0000-0000-0000-000000000008', '51000000-0000-0000-0000-000000000001', 'Kitchen',   'Sea bass chermoula', 'Charred vegetables, preserved lemon',        135.00);
 
--- bcrypt hashes generated with the app's own BCryptPasswordEncoder and verified against
--- the plaintext. Amina = 1234, Youssef = 2468, Sara = 1357.
-INSERT INTO staff_member (id, store_id, full_name, pin_hash) VALUES
-    ('57aff000-0000-0000-0000-000000000001', '51000000-0000-0000-0000-000000000001', 'Amina Benali',  '$2a$10$9uIi30pjqJBTIrcqNr7yRO6SdFg6eZpY7Ia4PmfESO/btEOQ1vedi'),
-    ('57aff000-0000-0000-0000-000000000002', '51000000-0000-0000-0000-000000000001', 'Youssef Idrissi', '$2a$10$wQErAKiuAcJt/ZFekJITduRLOZvZo/eNek3TjDguCLLrua2c00BuC'),
-    ('57aff000-0000-0000-0000-000000000003', '51000000-0000-0000-0000-000000000001', 'Sara El Amrani', '$2a$10$IHNnPh81Hpt2f.C3aoPfmuh1f.M1X6nX5zjvNmxwH6rEHtCphOZcW');
+-- PINs are stored as typed and must be unique within a venue, because entering one on
+-- the pad is what identifies the staff member.
+INSERT INTO staff_member (id, store_id, full_name, pin) VALUES
+    ('57aff000-0000-0000-0000-000000000001', '51000000-0000-0000-0000-000000000001', 'Amina Benali',  '1234'),
+    ('57aff000-0000-0000-0000-000000000002', '51000000-0000-0000-0000-000000000001', 'Youssef Idrissi', '2468'),
+    ('57aff000-0000-0000-0000-000000000003', '51000000-0000-0000-0000-000000000001', 'Sara El Amrani', '1357');
 
 -- The four seeded requests from MockRequestRepositoryImpl, with timestamps relative to now
 -- so the queue always shows sensible "2 min ago" labels. r2 is already acknowledged.
