@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -22,7 +23,8 @@ import java.util.UUID;
  * acknowledging a {@code ServiceRequest} can be attributed to someone.
  */
 @Entity
-@Table(name = "staff_member")
+@Table(name = "staff_member", uniqueConstraints = @UniqueConstraint(
+        name = "uq_staff_member_store_pin", columnNames = {"store_id", "pin"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -40,12 +42,12 @@ public class StaffMember {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
-    @Column(name = "pin_hash", nullable = false)
-    private String pinHash;
+    @Column(name = "pin", nullable = false, length = 4)
+    private String pin;
 
-    public StaffMember(Store store, String fullName, String pinHash) {
+    public StaffMember(Store store, String fullName, String pin) {
         this.store = store;
         this.fullName = fullName;
-        this.pinHash = pinHash;
+        this.pin = pin;
     }
 }

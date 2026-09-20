@@ -87,7 +87,8 @@ Account-facing — require `Authorization: Bearer <Firebase ID token>`:
 | `POST` / `GET` | `/api/stores/{storeId}/tables`          | Add a table (`qrToken` generated server-side) / list |
 | `POST` / `GET` | `/api/stores/{storeId}/menu-items`      | Add / list menu items |
 | `POST` / `GET` | `/api/stores/{storeId}/staff`           | Add (hashes the PIN) / list staff |
-| `POST` | `/api/staff/{staffId}/verify-pin`       | Check a PIN against the stored bcrypt hash |
+| `POST` | `/api/staff/{staffId}/verify-pin`       | Check a PIN for one known staff member |
+| `POST` | `/api/stores/{storeId}/verify-pin`      | Identify which staff member a PIN belongs to |
 | `GET` | `/api/stores/{storeId}/requests/active` | Requests still `OPEN` or `ACKNOWLEDGED` |
 | `POST` | `/api/requests/{requestId}/acknowledge` | Body: `{ "staffId": "<uuid>" }` |
 | `POST` | `/api/requests/{requestId}/resolve`     | |
