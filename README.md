@@ -87,7 +87,8 @@ Account-facing — require `Authorization: Bearer <Firebase ID token>`:
 | `POST` / `GET` | `/api/stores/{storeId}/tables`          | Add a table (`qrToken` generated server-side) / list |
 | `POST` / `GET` | `/api/stores/{storeId}/menu-items`      | Add / list menu items |
 | `POST` / `GET` | `/api/stores/{storeId}/staff`           | Add (hashes the PIN) / list staff |
-| `POST` | `/api/staff/{staffId}/verify-pin`       | Check a PIN against the stored bcrypt hash |
+| `POST` | `/api/staff/{staffId}/verify-pin`       | Check a PIN for one known staff member |
+| `POST` | `/api/stores/{storeId}/verify-pin`      | Identify which staff member a PIN belongs to |
 | `GET` | `/api/stores/{storeId}/requests/active` | Requests still `OPEN` or `ACKNOWLEDGED` |
 | `POST` | `/api/requests/{requestId}/acknowledge` | Body: `{ "staffId": "<uuid>" }` |
 | `POST` | `/api/requests/{requestId}/resolve`     | |
@@ -98,18 +99,23 @@ for a store belonging to someone else.
 
 ## Real-time
 
-STOMP endpoint at `/ws` (SockJS enabled). `ServiceRequestBroadcaster` publishes to
-`/topic/stores/{storeId}/requests` on create, acknowledge and resolve:
+STOMP over WebSocket at `/ws` (native for mobile, SockJS also available for web later).
+`ServiceRequestBroadcaster` listens for `ServiceRequestChangedEvent` **after the DB
+commit** and publishes to `/topic/stores/{storeId}/requests`:
 
 ```json
 { "event": "CREATED", "request": { "id": "…", "tableNumber": 4, "type": "CALL_WAITER", "status": "OPEN" } }
 ```
 
-This is a stub: the handshake is currently unauthenticated and there is no client wiring yet.
-Because `enableSimpleBroker("/topic")` applies no destination authorization, anyone who can
-reach `/ws` can subscribe to another venue's `storeId` and watch its floor. Authenticate the
-handshake before exposing this publicly — the mobile app polls instead, so nothing depends on
-it yet.
+The HTTP upgrade is open, but STOMP `CONNECT` must carry
+`Authorization: Bearer <Firebase ID token>`. `SUBSCRIBE` to a store topic is allowed only
+when that store belongs to the authenticated account. The mobile app subscribes first,
+buffers events, takes a REST snapshot, then replays the buffer so nothing is lost in the
+gap between snapshot and subscribe.
+
+The broker is Spring's in-memory `simpleBroker`. That is correct for a single app
+instance. Before you run more than one backend replica, replace it with a shared broker
+(Redis or RabbitMQ) or phones on instance B will miss events handled by instance A.
 
 ## Deploying
 

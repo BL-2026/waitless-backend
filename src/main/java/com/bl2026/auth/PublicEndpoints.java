@@ -21,7 +21,10 @@ public final class PublicEndpoints {
             new Endpoint(HttpMethod.POST, "/api/requests")
     );
 
-    /** Paths that carry no account identity at all (STOMP handshake, health checks). */
+    /**
+     * Paths that carry no HTTP-level account identity. {@code /ws/**} is the STOMP upgrade
+     * only — identity is verified on the CONNECT frame by {@link StompAuthChannelInterceptor}.
+     */
     public static final List<String> UNSECURED_PATTERNS = List.of(
             "/ws/**",
             "/actuator/health",

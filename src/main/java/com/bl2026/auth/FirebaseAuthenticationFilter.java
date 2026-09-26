@@ -1,7 +1,5 @@
 package com.bl2026.auth;
 
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseToken;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,10 +20,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String BEARER_PREFIX = "Bearer ";
-
-    private final FirebaseTokenVerifier tokenVerifier;
-    private final FirebaseProperties properties;
+    private final FirebaseBearerAuthenticator bearerAuthenticator;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -37,40 +32,28 @@ public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (properties.getMock().isEnabled()
-            && header != null
-            && header.equals(BEARER_PREFIX + properties.getMock().getToken())) {
-            FirebaseProperties.Mock mock = properties.getMock();
-            SecurityContextHolder.getContext().setAuthentication(
-                new FirebaseAuthenticationToken(mock.getFirebaseUid(), mock.getEmail(), mock.getDisplayName()));
+        FirebaseBearerAuthenticator.Outcome outcome = bearerAuthenticator.authenticateHeader(header);
+
+        if (outcome.isOk()) {
+            SecurityContextHolder.getContext().setAuthentication(outcome.authentication());
             chain.doFilter(request, response);
             return;
         }
 
-        if (header == null || !header.startsWith(BEARER_PREFIX)) {
+        if (outcome.failure() == FirebaseBearerAuthenticator.Failure.MISSING) {
             // No credentials presented. Leave the context empty and let the entry point answer 401.
             chain.doFilter(request, response);
             return;
         }
 
-        if (!tokenVerifier.isEnabled()) {
+        SecurityContextHolder.clearContext();
+        if (outcome.failure() == FirebaseBearerAuthenticator.Failure.FIREBASE_DISABLED) {
             writeError(response, HttpStatus.SERVICE_UNAVAILABLE,
                     "Firebase authentication is not configured on this server");
             return;
         }
 
-        String idToken = header.substring(BEARER_PREFIX.length()).trim();
-        try {
-            FirebaseToken token = tokenVerifier.verify(idToken);
-            SecurityContextHolder.getContext().setAuthentication(new FirebaseAuthenticationToken(token));
-        } catch (FirebaseAuthException ex) {
-            SecurityContextHolder.clearContext();
-            log.debug("Rejected Firebase ID token: {}", ex.getMessage());
-            writeError(response, HttpStatus.UNAUTHORIZED, "Invalid or expired Firebase ID token");
-            return;
-        }
-
-        chain.doFilter(request, response);
+        writeError(response, HttpStatus.UNAUTHORIZED, "Invalid or expired Firebase ID token");
     }
 
     private void writeError(HttpServletResponse response, HttpStatus status, String message) throws IOException {
