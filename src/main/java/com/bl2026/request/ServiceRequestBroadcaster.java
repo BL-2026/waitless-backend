@@ -4,28 +4,28 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
-
-import java.util.UUID;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
- * Publishes service-request changes to {@code /topic/stores/{storeId}/requests}.
- * Client wiring (subscriptions, auth on the STOMP handshake) is not built yet.
+ * Publishes service-request changes to {@link RequestTopics#storeRequests}.
+ * Subscribers must CONNECT with a Firebase ID token and may only subscribe to stores
+ * they own — see {@link com.bl2026.auth.StompAuthChannelInterceptor}.
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ServiceRequestBroadcaster {
 
-    private static final String DESTINATION_TEMPLATE = "/topic/stores/%s/requests";
-
     private final SimpMessagingTemplate messagingTemplate;
 
-    public void broadcast(ServiceRequestEvent.Type eventType, ServiceRequest request) {
-        UUID storeId = request.getStore().getId();
-        String destination = DESTINATION_TEMPLATE.formatted(storeId);
-        ServiceRequestEvent event = new ServiceRequestEvent(eventType, ServiceRequestResponse.from(request));
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onServiceRequestChanged(ServiceRequestChangedEvent event) {
+        String destination = RequestTopics.storeRequests(event.request().storeId());
+        ServiceRequestEvent payload = new ServiceRequestEvent(event.type(), event.request());
 
-        log.debug("Broadcasting {} for request {} to {}", eventType, request.getId(), destination);
-        messagingTemplate.convertAndSend(destination, event);
+        log.debug("Broadcasting {} for request {} to {}",
+                event.type(), event.request().id(), destination);
+        messagingTemplate.convertAndSend(destination, payload);
     }
 }

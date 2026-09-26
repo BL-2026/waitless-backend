@@ -10,6 +10,7 @@ import com.bl2026.store.StoreService;
 import com.bl2026.storetable.StoreTable;
 import com.bl2026.storetable.StoreTableService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +25,7 @@ public class ServiceRequestService {
     private final StoreTableService storeTableService;
     private final StoreService storeService;
     private final StaffService staffService;
-    private final ServiceRequestBroadcaster broadcaster;
+    private final ApplicationEventPublisher eventPublisher;
 
     /** Called by the customer web app with no authentication; the QR token is the only credential. */
     @Transactional
@@ -38,8 +39,10 @@ public class ServiceRequestService {
         ServiceRequest serviceRequest = serviceRequestRepository.save(
                 new ServiceRequest(store, table, request.type(), request.paymentMethod()));
 
-        broadcaster.broadcast(ServiceRequestEvent.Type.CREATED, serviceRequest);
-        return ServiceRequestResponse.from(serviceRequest);
+        ServiceRequestResponse response = ServiceRequestResponse.from(serviceRequest);
+        eventPublisher.publishEvent(
+                new ServiceRequestChangedEvent(ServiceRequestEvent.Type.CREATED, response));
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -65,8 +68,10 @@ public class ServiceRequestService {
         }
 
         serviceRequest.acknowledge(staff);
-        broadcaster.broadcast(ServiceRequestEvent.Type.ACKNOWLEDGED, serviceRequest);
-        return ServiceRequestResponse.from(serviceRequest);
+        ServiceRequestResponse response = ServiceRequestResponse.from(serviceRequest);
+        eventPublisher.publishEvent(
+                new ServiceRequestChangedEvent(ServiceRequestEvent.Type.ACKNOWLEDGED, response));
+        return response;
     }
 
     @Transactional
@@ -77,8 +82,10 @@ public class ServiceRequestService {
         }
 
         serviceRequest.resolve();
-        broadcaster.broadcast(ServiceRequestEvent.Type.RESOLVED, serviceRequest);
-        return ServiceRequestResponse.from(serviceRequest);
+        ServiceRequestResponse response = ServiceRequestResponse.from(serviceRequest);
+        eventPublisher.publishEvent(
+                new ServiceRequestChangedEvent(ServiceRequestEvent.Type.RESOLVED, response));
+        return response;
     }
 
     private ServiceRequest requireOwnedRequest(UUID requestId) {
