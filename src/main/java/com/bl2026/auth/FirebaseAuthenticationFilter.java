@@ -1,5 +1,7 @@
 package com.bl2026.auth;
 
+import com.bl2026.common.ApiErrorWriter;
+import com.bl2026.common.ErrorCode;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -48,18 +49,12 @@ public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
 
         SecurityContextHolder.clearContext();
         if (outcome.failure() == FirebaseBearerAuthenticator.Failure.FIREBASE_DISABLED) {
-            writeError(response, HttpStatus.SERVICE_UNAVAILABLE,
+            ApiErrorWriter.write(response, HttpStatus.SERVICE_UNAVAILABLE, ErrorCode.AUTH_UNAVAILABLE,
                     "Firebase authentication is not configured on this server");
             return;
         }
 
-        writeError(response, HttpStatus.UNAUTHORIZED, "Invalid or expired Firebase ID token");
-    }
-
-    private void writeError(HttpServletResponse response, HttpStatus status, String message) throws IOException {
-        response.setStatus(status.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write("{\"status\":%d,\"error\":\"%s\",\"message\":\"%s\"}"
-                .formatted(status.value(), status.getReasonPhrase(), message));
+        ApiErrorWriter.write(response, HttpStatus.UNAUTHORIZED, ErrorCode.AUTH_INVALID,
+                "Invalid or expired Firebase ID token");
     }
 }
