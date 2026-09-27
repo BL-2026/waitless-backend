@@ -49,16 +49,21 @@ public class RequestPushNotifier {
 
     private void send(DeviceToken device, ServiceRequestResponse request) {
         String title = FloorCallCopy.title(device.getLocale());
-        String body = FloorCallCopy.body(device.getLocale(), request.type(), request.tableNumber());
+        String body = FloorCallCopy.body(
+                device.getLocale(), request.type(), request.tableNumber(), request.paymentMethod());
 
-        Message message = Message.builder()
+        var builder = Message.builder()
                 .setToken(device.getToken())
                 .setNotification(Notification.builder().setTitle(title).setBody(body).build())
                 .putData("requestId", request.id().toString())
                 .putData("storeId", request.storeId().toString())
                 .putData("tableNumber", String.valueOf(request.tableNumber()))
                 .putData("type", request.type().name())
-                .putData("locale", device.getLocale())
+                .putData("locale", device.getLocale());
+        if (request.paymentMethod() != null) {
+            builder.putData("paymentMethod", request.paymentMethod().name());
+        }
+        Message message = builder
                 .setAndroidConfig(AndroidConfig.builder()
                         .setPriority(AndroidConfig.Priority.HIGH)
                         .setNotification(AndroidNotification.builder()
