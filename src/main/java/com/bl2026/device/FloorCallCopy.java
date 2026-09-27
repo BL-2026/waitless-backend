@@ -25,28 +25,28 @@ final class FloorCallCopy {
 
     private static final Map<String, Bundle> BY_LOCALE = Map.of(
             "en", new Bundle(
-                    "Waitless",
+                    "Floorcall",
                     "Table %d is calling",
                     "Table %d wants the bill",
                     "Table %d wants the bill · %s",
                     "Cash",
                     "Card"),
             "fr", new Bundle(
-                    "Waitless",
+                    "Floorcall",
                     "La table %d appelle",
                     "La table %d demande l'addition",
                     "La table %d demande l'addition · %s",
                     "Espèces",
                     "Carte"),
             "ar", new Bundle(
-                    "Waitless",
+                    "Floorcall",
                     "الطاولة %d تستدعي",
                     "الطاولة %d تطلب الحساب",
                     "الطاولة %d تطلب الحساب · %s",
                     "نقدًا",
                     "بطاقة"),
             "es", new Bundle(
-                    "Waitless",
+                    "Floorcall",
                     "La mesa %d está llamando",
                     "La mesa %d pide la cuenta",
                     "La mesa %d pide la cuenta · %s",
