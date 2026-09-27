@@ -1,10 +1,12 @@
 package com.bl2026.auth;
 
+import com.bl2026.common.ApiErrorWriter;
+import com.bl2026.common.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -43,12 +45,9 @@ public class SecurityConfig {
                                     .permitAll());
                     registry.anyRequest().authenticated();
                 })
-                .exceptionHandling(handling -> handling.authenticationEntryPoint((request, response, ex) -> {
-                    response.setStatus(401);
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.getWriter().write(
-                            "{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Missing Firebase ID token\"}");
-                }))
+                .exceptionHandling(handling -> handling.authenticationEntryPoint((request, response, ex) ->
+                        ApiErrorWriter.write(response, HttpStatus.UNAUTHORIZED, ErrorCode.AUTH_MISSING,
+                                "Missing Firebase ID token")))
                 .addFilterBefore(firebaseAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
