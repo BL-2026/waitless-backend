@@ -51,7 +51,8 @@ public class RequestPushNotifier {
         String title = FloorCallCopy.title(device.getLocale());
         String body = FloorCallCopy.body(device.getLocale(), request.type(), request.tableNumber());
 
-        Message message = Message.builder().setFid(device.getToken())
+        Message message = Message.builder()
+                .setToken(device.getToken())
                 .setNotification(Notification.builder().setTitle(title).setBody(body).build())
                 .putData("requestId", request.id().toString())
                 .putData("storeId", request.storeId().toString())
@@ -73,13 +74,12 @@ public class RequestPushNotifier {
         try {
             FirebaseMessaging.getInstance().send(message);
         } catch (FirebaseMessagingException ex) {
-            if (ex.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED
-                    || ex.getMessagingErrorCode() == MessagingErrorCode.INVALID_ARGUMENT) {
-                log.info("Dropping stale device token");
+            log.warn("FCM send failed: {} — {}", ex.getMessagingErrorCode(), ex.getMessage());
+            // Only UNREGISTERED means this token is dead. INVALID_ARGUMENT is often a
+            // payload/API mistake — do not delete a working phone because of that.
+            if (ex.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED) {
                 deviceTokenService.dropToken(device.getToken());
-                return;
             }
-            log.warn("Failed to push to a device: {}", ex.getMessagingErrorCode());
         }
     }
 }
